@@ -26,12 +26,21 @@ public abstract class BaseDistributedJob {
     private LockProvider lockProvider;
     private KeyValueProvider keyValueProvider;
 
+    public BaseDistributedJob() {
+    }
+
     public BaseDistributedJob(LockProvider lockProvider, KeyValueProvider keyValueProvider) {
         this.lockProvider = lockProvider;
         this.keyValueProvider = keyValueProvider;
     }
 
     public void schedule() {
+        if(lockProvider == null) {
+            throw new IllegalStateException("You must set a LockProvider!");
+        }
+        if(keyValueProvider == null) {
+            throw new IllegalStateException("You must set a KeyValueProvider!");
+        }
         Scheduler.getInstance().scheduleCron(this);
     }
 
@@ -82,5 +91,13 @@ public abstract class BaseDistributedJob {
                 lock.unlock();
             }
         }
+    }
+
+    public void setLockProvider(LockProvider lockProvider) {
+        this.lockProvider = lockProvider;
+    }
+
+    public void setKeyValueProvider(KeyValueProvider keyValueProvider) {
+        this.keyValueProvider = keyValueProvider;
     }
 }
