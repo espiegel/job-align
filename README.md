@@ -45,8 +45,13 @@ You are guaranteed that this job will fire only once, even when deployed on mult
 
 
 ## TODO
+* Unschedule a job
 * Usage of different Java Redis clients. Especially jedis and Spring redisTemplate
 * Job Sharding
+
+
+## Contribution
+Please submit a pull request along with a test and i'll merge it.
 
 
 
