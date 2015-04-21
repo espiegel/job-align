@@ -2,6 +2,8 @@ package com.spiegel.jobalign;
 
 import com.spiegel.jobalign.factory.KeyValueProvider;
 import com.spiegel.jobalign.factory.LockProvider;
+import com.spiegel.jobalign.factory.RedisProvider;
+import org.redisson.Redisson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,5 +101,11 @@ public abstract class BaseDistributedJob {
 
     public void setKeyValueProvider(KeyValueProvider keyValueProvider) {
         this.keyValueProvider = keyValueProvider;
+    }
+
+    public void setRedisson(Redisson redisson) {
+        RedisProvider redisProvider = new RedisProvider(redisson);
+        this.lockProvider = redisProvider;
+        this.keyValueProvider = redisProvider;
     }
 }

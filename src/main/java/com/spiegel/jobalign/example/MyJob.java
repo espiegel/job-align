@@ -2,7 +2,6 @@ package com.spiegel.jobalign.example;
 
 import com.spiegel.jobalign.BaseDistributedJob;
 import com.spiegel.jobalign.DistributedJobBuilder;
-import com.spiegel.jobalign.factory.RedisProvider;
 import org.redisson.Redisson;
 
 /**
@@ -11,10 +10,10 @@ import org.redisson.Redisson;
 public class MyJob extends BaseDistributedJob {
 
     public static void main(String[] args) {
-        RedisProvider redisProvider = new RedisProvider(Redisson.create());
+        Redisson redisson = Redisson.create();
         BaseDistributedJob myJob = new DistributedJobBuilder()
-                .setLockProvider(redisProvider)
-                .setKeyValueProvider(redisProvider)
+                .setJobName("MyJob")
+                .setRedisson(redisson)
                 .setCronExpression("0 0 * * * ?")
                 .setJobLogic(() -> System.out.println("Job performed!"))
                 .build();
@@ -22,10 +21,7 @@ public class MyJob extends BaseDistributedJob {
     }
 
     public MyJob() {
-        RedisProvider redisProvider = new RedisProvider(Redisson.create());
-        setKeyValueProvider(redisProvider);
-        setLockProvider(redisProvider);
-
+        setRedisson(Redisson.create());
         schedule();
     }
 
