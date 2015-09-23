@@ -1,40 +1,33 @@
 package com.spiegel.jobalign;
 
-import com.spiegel.jobalign.factory.DefaultKeyValueProvider;
-import com.spiegel.jobalign.factory.DefaultLockProvider;
 import com.spiegel.jobalign.factory.KeyValueProvider;
 import com.spiegel.jobalign.factory.LockProvider;
 import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
-import java.util.Calendar;
 
 /**
  * Created by Eidan on 4/22/2015.
  */
-@RunWith(JUnit4.class)
-public class TwoSchedulersTest {
-    private boolean jobPerformed = false;
+public class TwoSchedulersTest extends AbstractSchedulerTest {
 
-    @Test
+    public TwoSchedulersTest(LockProvider lockProvider, KeyValueProvider keyValueProvider) {
+        super(lockProvider, keyValueProvider);
+    }
+
     public void testScheduler() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.SECOND, 3);
-        int second = calendar.get(Calendar.SECOND);
-        String cron = second+" * * * * ?";
+        DistributedJobBuilder builder = new DistributedJobBuilder()
+            .setLockProvider(getLockProvider())
+            .setKeyValueProvider(getKeyValueProvider())
+            .setCronExpression(getFutureCron(3))
+            .setJobName(getClass().getName())
+            .setJobLogic((shardNumber) -> count.incrementAndGet());
 
-        LockProvider lockProvider = new DefaultLockProvider();
-        DefaultKeyValueProvider defaultKeyValueStore = new DefaultKeyValueProvider();
-
-        BaseDistributedJob myJob1 = new MyJob(lockProvider, defaultKeyValueStore, cron);
-        BaseDistributedJob myJob2 = new MyJob(lockProvider, defaultKeyValueStore, cron);
+        BaseDistributedJob myJob1 = builder.build();
+        BaseDistributedJob myJob2 = builder.build();
 
         myJob1.schedule();
         myJob2.schedule();
 
-        Assert.assertEquals(false, jobPerformed);
+        Assert.assertEquals(0, count.get());
 
         try {
             Thread.sleep(5000);
@@ -42,30 +35,6 @@ public class TwoSchedulersTest {
             e.printStackTrace();
         }
 
-        Assert.assertEquals(true, jobPerformed);
-    }
-
-    public class MyJob extends BaseDistributedJob {
-
-        private final String cron;
-
-        public MyJob(LockProvider lockProvider, KeyValueProvider keyValueProvider, String cron) {
-            super(lockProvider, keyValueProvider);
-            this.cron = cron;
-        }
-
-        @Override
-        public void performJobLogic(int shardNumber) {
-            setJobPerformed(!jobPerformed);
-        }
-
-        @Override
-        public String getCronExpression() {
-            return cron;
-        }
-    }
-
-    public void setJobPerformed(boolean flag) {
-        jobPerformed = flag;
+        Assert.assertEquals(1, count.get());
     }
 }

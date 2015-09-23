@@ -1,41 +1,30 @@
 package com.spiegel.jobalign;
 
-import com.spiegel.jobalign.factory.DefaultKeyValueProvider;
-import com.spiegel.jobalign.factory.DefaultLockProvider;
 import com.spiegel.jobalign.factory.KeyValueProvider;
 import com.spiegel.jobalign.factory.LockProvider;
 import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Calendar;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by eidan on 9/23/15.
  */
-@RunWith(JUnit4.class)
-public class ShardedThreeSchedulerTest {
+public class ShardedThreeSchedulerTest extends AbstractSchedulerTest {
 
-    private Logger logger = LoggerFactory.getLogger(ShardedThreeSchedulerTest.class);
-    private AtomicInteger count = new AtomicInteger();
+    public ShardedThreeSchedulerTest(LockProvider lockProvider, KeyValueProvider keyValueProvider) {
+        super(lockProvider, keyValueProvider);
+    }
 
-    @Test
     public void testScheduler() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.SECOND, 3);
-        int second = calendar.get(Calendar.SECOND);
-        String cron = second + " * * * * ?";
+        DistributedJobBuilder builder = new DistributedJobBuilder()
+            .setLockProvider(getLockProvider())
+            .setKeyValueProvider(getKeyValueProvider())
+            .setCronExpression(getFutureCron(3))
+            .setJobName(getClass().getName())
+            .setJobLogic((shardNumber) -> count.incrementAndGet())
+            .setShards(5);
 
-        LockProvider lockProvider = new DefaultLockProvider();
-        DefaultKeyValueProvider defaultKeyValueStore = new DefaultKeyValueProvider();
-
-        BaseDistributedJob myJob1 = new MyJob(lockProvider, defaultKeyValueStore, cron);
-        BaseDistributedJob myJob2 = new MyJob(lockProvider, defaultKeyValueStore, cron);
-        BaseDistributedJob myJob3 = new MyJob(lockProvider, defaultKeyValueStore, cron);
+        BaseDistributedJob myJob1 = builder.build();
+        BaseDistributedJob myJob2 = builder.build();
+        BaseDistributedJob myJob3 = builder.build();
 
         myJob1.schedule();
         myJob2.schedule();
@@ -50,31 +39,5 @@ public class ShardedThreeSchedulerTest {
         }
 
         Assert.assertEquals(5, count.get());
-    }
-
-    public class MyJob extends BaseDistributedJob {
-
-        private final String cron;
-
-        public MyJob(LockProvider lockProvider, KeyValueProvider keyValueProvider, String cron) {
-            super(lockProvider, keyValueProvider);
-            this.cron = cron;
-        }
-
-        @Override
-        public void performJobLogic(int shardNumber) {
-            logger.debug("Perform job logic for jobName = {} and shardNumber = {}", getJobName(), shardNumber);
-            count.incrementAndGet();
-        }
-
-        @Override
-        public String getCronExpression() {
-            return cron;
-        }
-
-        @Override
-        public int getNumberOfShards() {
-            return 5;
-        }
     }
 }
