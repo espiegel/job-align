@@ -36,7 +36,41 @@ public abstract class BaseDistributedJob {
         this.keyValueProvider = keyValueProvider;
     }
 
-    public void schedule() {
+    /**
+     * Perform job logic for a specific shardNumber. Shard numbers start from 0 to getNumberOfShards() - 1 (inclusive)
+     * If your job isn't sharded then you shouldn't care about this parameter.
+     * @param shardNumber Shard number of the job
+     */
+    public abstract void performJobLogic(int shardNumber);
+
+    /**
+     *
+     * @return A cron expression following cron conventions
+     */
+    public abstract String getCronExpression();
+
+
+    /**
+     * @return Number of shards of this distributed job. Override this method
+     * to set a different number. Default is 1.
+     */
+    public int getNumberOfShards() {
+        return 1;
+    }
+
+    public final Runnable getRunnable() {
+        return this::runDistributedJob;
+    }
+
+    public String getJobName() {
+        return this.getClass().getName();
+    }
+
+    private String getJobName(int shardNumber) {
+        return getJobName() + ":" + shardNumber;
+    }
+
+    public final void schedule() {
         if(lockProvider == null) {
             throw new IllegalStateException("You must set a LockProvider!");
         }
@@ -46,64 +80,65 @@ public abstract class BaseDistributedJob {
         Scheduler.getInstance().scheduleCron(this);
     }
 
-    public abstract void performJobLogic();
-    public abstract String getCronExpression();
-
-    public Runnable getRunnable() {
-        return this::runDistributedJob;
-    }
-
-    public String getJobName() {
-        return this.getClass().getName();
-    }
-
     private void runDistributedJob() {
         // Get the current timestamp
         long jobFiredTimeStamp = new Date().getTime();
 
-        // Acquire the lock
-        boolean lockAcquired = false;
-        Lock lock = lockProvider.getLock(JOB_LOCK_NAME);
+        int numberOfShards = getNumberOfShards();
+        for(int i = 0; i < numberOfShards; i++) {
 
-        try {
-            lockAcquired = lock.tryLock(MAX_LOCK_ACQUISITION_IN_SECONDS, TimeUnit.SECONDS);
+            // Acquire the lock
+            boolean lockAcquired = false;
+            Lock lock = lockProvider.getLock(getJobLockName(i));
 
-            if(lockAcquired) {
-                // Check the timestamp
-                long lockAcquisitionTimeStamp = new Date().getTime();
-                long lastJobTimeStamp = keyValueProvider.getLong(JOB_TIMESTAMP_NAME);
+            try {
+                lockAcquired = lock.tryLock(MAX_LOCK_ACQUISITION_IN_SECONDS, TimeUnit.SECONDS);
 
-                if(lastJobTimeStamp < jobFiredTimeStamp) {
-                    mLogger.debug("About to perform job logic for {}, jobTimeStamp = {}, jobFiredTimeStamp = {}, lockAcquisitionTimeStamp = {}",
-                            getJobName(), lastJobTimeStamp, jobFiredTimeStamp, lockAcquisitionTimeStamp);
-                    // Perform job logic
-                    performJobLogic();
+                if(lockAcquired) {
+                    // Check the timestamp
+                    long lockAcquisitionTimeStamp = new Date().getTime();
+                    long lastJobTimeStamp = keyValueProvider.getLong(getJobTimestampName(i));
 
-                    // Write the timestamp
-                    keyValueProvider.setLong(JOB_TIMESTAMP_NAME, lockAcquisitionTimeStamp);
-                } else {
-                    mLogger.debug("Job {} already performed, jobTimeStamp = {}, jobFiredTimeStamp = {}, lockAcquisitionTimeStamp = {}",
-                            getJobName(), lastJobTimeStamp, jobFiredTimeStamp, lockAcquisitionTimeStamp);
+                    if(lastJobTimeStamp < jobFiredTimeStamp) {
+                        mLogger.debug("About to perform job logic for {}, jobTimeStamp = {}, jobFiredTimeStamp = {}, lockAcquisitionTimeStamp = {}",
+                            getJobName(i), lastJobTimeStamp, jobFiredTimeStamp, lockAcquisitionTimeStamp);
+                        // Perform job logic
+                        performJobLogic(i);
+
+                        // Write the timestamp
+                        keyValueProvider.setLong(getJobTimestampName(i), lockAcquisitionTimeStamp);
+                    } else {
+                        mLogger.debug("Job {} already performed, jobTimeStamp = {}, jobFiredTimeStamp = {}, lockAcquisitionTimeStamp = {}",
+                            getJobName(i), lastJobTimeStamp, jobFiredTimeStamp, lockAcquisitionTimeStamp);
+                    }
                 }
-            }
-        } catch(Exception e) {
-            mLogger.warn(e.getMessage());
-        } finally {
-            if(lockAcquired) {
-                lock.unlock();
+            } catch(Exception e) {
+                mLogger.warn(e.getMessage());
+            } finally {
+                if(lockAcquired) {
+                    lock.unlock();
+                }
             }
         }
     }
 
-    public void setLockProvider(LockProvider lockProvider) {
+    private String getJobLockName(int shardNumber) {
+        return JOB_LOCK_NAME + ":" + shardNumber;
+    }
+
+    private String getJobTimestampName(int shardNumber) {
+        return JOB_TIMESTAMP_NAME + ":" + shardNumber;
+    }
+
+    public final void setLockProvider(LockProvider lockProvider) {
         this.lockProvider = lockProvider;
     }
 
-    public void setKeyValueProvider(KeyValueProvider keyValueProvider) {
+    public final void setKeyValueProvider(KeyValueProvider keyValueProvider) {
         this.keyValueProvider = keyValueProvider;
     }
 
-    public void setRedisson(Redisson redisson) {
+    public final void setRedisson(Redisson redisson) {
         RedisProvider redisProvider = new RedisProvider(redisson);
         this.lockProvider = redisProvider;
         this.keyValueProvider = redisProvider;

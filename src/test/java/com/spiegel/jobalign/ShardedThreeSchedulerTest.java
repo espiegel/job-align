@@ -8,33 +8,40 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Calendar;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Created by Eidan on 4/22/2015.
+ * Created by eidan on 9/23/15.
  */
 @RunWith(JUnit4.class)
-public class TwoSchedulersTest {
-    private boolean jobPerformed = false;
+public class ShardedThreeSchedulerTest {
+
+    private Logger logger = LoggerFactory.getLogger(ShardedThreeSchedulerTest.class);
+    private AtomicInteger count = new AtomicInteger();
 
     @Test
     public void testScheduler() {
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.SECOND, 3);
         int second = calendar.get(Calendar.SECOND);
-        String cron = second+" * * * * ?";
+        String cron = second + " * * * * ?";
 
         LockProvider lockProvider = new DefaultLockProvider();
         DefaultKeyValueProvider defaultKeyValueStore = new DefaultKeyValueProvider();
 
         BaseDistributedJob myJob1 = new MyJob(lockProvider, defaultKeyValueStore, cron);
         BaseDistributedJob myJob2 = new MyJob(lockProvider, defaultKeyValueStore, cron);
+        BaseDistributedJob myJob3 = new MyJob(lockProvider, defaultKeyValueStore, cron);
 
         myJob1.schedule();
         myJob2.schedule();
+        myJob3.schedule();
 
-        Assert.assertEquals(false, jobPerformed);
+        Assert.assertEquals(0, count.get());
 
         try {
             Thread.sleep(5000);
@@ -42,7 +49,7 @@ public class TwoSchedulersTest {
             e.printStackTrace();
         }
 
-        Assert.assertEquals(true, jobPerformed);
+        Assert.assertEquals(5, count.get());
     }
 
     public class MyJob extends BaseDistributedJob {
@@ -56,16 +63,18 @@ public class TwoSchedulersTest {
 
         @Override
         public void performJobLogic(int shardNumber) {
-            setJobPerformed(!jobPerformed);
+            logger.debug("Perform job logic for jobName = {} and shardNumber = {}", getJobName(), shardNumber);
+            count.incrementAndGet();
         }
 
         @Override
         public String getCronExpression() {
             return cron;
         }
-    }
 
-    public void setJobPerformed(boolean flag) {
-        jobPerformed = flag;
+        @Override
+        public int getNumberOfShards() {
+            return 5;
+        }
     }
 }

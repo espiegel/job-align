@@ -15,7 +15,7 @@ public class MyJob1 {
                 .setJobName("MyJob1")
                 .setRedisson(redisson)
                 .setCronExpression("0 0 * * * ?")
-                .setJobLogic(() -> System.out.println("Job 1 performed!"))
+                .setJobLogic((shardNumber) -> System.out.println("Job 1 performed!"))
                 .build();
         myJob.schedule();
     }

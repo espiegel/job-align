@@ -21,7 +21,7 @@ public class SchedulerTest {
     public void testScheduler() {
         BaseDistributedJob myJob = new BaseDistributedJob(new DefaultLockProvider(), new DefaultKeyValueProvider()) {
             @Override
-            public void performJobLogic() {
+            public void performJobLogic(int shardNumber) {
                 setJobPerformed(true);
             }
 

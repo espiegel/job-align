@@ -5,23 +5,26 @@ import com.spiegel.jobalign.factory.LockProvider;
 import com.spiegel.jobalign.factory.RedisProvider;
 import org.redisson.Redisson;
 
+import java.util.function.Consumer;
+
 /**
  * Created by Eidan on 4/22/2015.
  */
 public class DistributedJobBuilder {
 
     private String cron;
-    private Runnable performJobLogic;
+    private Consumer<Integer> performJobLogic;
     private LockProvider lockProvider;
     private KeyValueProvider keyValueProvider;
     private String jobName;
+    private int shards = 1;
 
     public DistributedJobBuilder setCronExpression(String cronExpression) {
         this.cron = cronExpression;
         return this;
     }
 
-    public DistributedJobBuilder setJobLogic(Runnable jobLogic) {
+    public DistributedJobBuilder setJobLogic(Consumer<Integer> jobLogic) {
         this.performJobLogic = jobLogic;
         return this;
     }
@@ -45,6 +48,11 @@ public class DistributedJobBuilder {
 
     public DistributedJobBuilder setJobName(String jobName) {
         this.jobName = jobName;
+        return this;
+    }
+
+    public DistributedJobBuilder setShards(int numberOfShards) {
+        this.shards = numberOfShards;
         return this;
     }
 
@@ -72,13 +80,18 @@ public class DistributedJobBuilder {
             }
 
             @Override
-            public void performJobLogic() {
-                performJobLogic.run();
+            public void performJobLogic(int shardNumber) {
+                performJobLogic.accept(shardNumber);
             }
 
             @Override
             public String getCronExpression() {
                 return cron;
+            }
+
+            @Override
+            public int getNumberOfShards() {
+                return shards;
             }
         };
     }

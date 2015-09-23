@@ -14,7 +14,7 @@ public class MyJob2 extends BaseDistributedJob {
     }
 
     @Override
-    public void performJobLogic() {
+    public void performJobLogic(int shardNumber) {
         System.out.println("Job 2 performed!");
     }
 
