@@ -7,31 +7,16 @@ import org.redisson.Redisson;
 /**
  * Created by Eidan on 4/22/2015.
  */
-public class MyJob extends BaseDistributedJob {
+public class MyJob1 {
 
     public static void main(String[] args) {
         Redisson redisson = Redisson.create();
         BaseDistributedJob myJob = new DistributedJobBuilder()
-                .setJobName("MyJob")
+                .setJobName("MyJob1")
                 .setRedisson(redisson)
                 .setCronExpression("0 0 * * * ?")
-                .setJobLogic(() -> System.out.println("Job performed!"))
+                .setJobLogic(() -> System.out.println("Job 1 performed!"))
                 .build();
         myJob.schedule();
-    }
-
-    public MyJob() {
-        setRedisson(Redisson.create());
-        schedule();
-    }
-
-    @Override
-    public void performJobLogic() {
-        System.out.println("Job performed!");
-    }
-
-    @Override
-    public String getCronExpression() {
-        return "0 0 * * * ?";
     }
 }
