@@ -8,6 +8,10 @@ import org.redisson.Redisson;
  */
 public class MyJob2 extends BaseDistributedJob {
 
+    public static void main(String[] args) {
+        new MyJob2();
+    }
+
     public MyJob2() {
         setRedisson(Redisson.create());
         schedule();
