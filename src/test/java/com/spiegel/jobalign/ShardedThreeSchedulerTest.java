@@ -1,8 +1,9 @@
 package com.spiegel.jobalign;
 
+import static org.junit.Assert.assertEquals;
+
 import com.spiegel.jobalign.factory.KeyValueProvider;
 import com.spiegel.jobalign.factory.LockProvider;
-import org.junit.Assert;
 
 /**
  * Created by eidan on 9/23/15.
@@ -30,14 +31,8 @@ public class ShardedThreeSchedulerTest extends AbstractSchedulerTest {
         myJob2.schedule();
         myJob3.schedule();
 
-        Assert.assertEquals(0, count.get());
-
-        try {
-            Thread.sleep(5000);
-        } catch(InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        Assert.assertEquals(5, count.get());
+        assertEquals(0, count.get());
+        sleep(5000);
+        assertEquals(5, count.get());
     }
 }

@@ -34,10 +34,9 @@ Usage:
 OR
 
 ```java
-    Redisson redisson = Redisson.create();
     BaseDistributedJob myJob = new DistributedJobBuilder()
             .setJobName("MyJob")
-            .setRedisson(redisson)
+            .setRedisson(Redisson.create())
             .setCronExpression("0 0 * * * ?")
             .setJobLogic((shardNumber) -> System.out.println("Job performed!"))
             .build();
@@ -53,10 +52,9 @@ You are guaranteed that this job will fire only once, even when deployed on mult
 If you've got a large job that you want to split up into batches you can do so with sharding. For example if you've
 got 1000 operations to perform and you want to split them up into 5 batches of 200 you can use the following:
 ```java
-    Redisson redisson = Redisson.create();
     BaseDistributedJob myJob = new DistributedJobBuilder()
         .setJobName("MyJob")
-        .setRedisson(redisson)
+        .setRedisson(Redisson.create())
         .setCronExpression("0 * * * * ?")
         .setShards(5)
         .setJobLogic((shardNumber) ->
