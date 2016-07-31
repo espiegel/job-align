@@ -1,22 +1,23 @@
 package com.spiegel.jobalign;
 
-import com.spiegel.jobalign.factory.KeyValueProvider;
-import com.spiegel.jobalign.factory.LockProvider;
-import com.spiegel.jobalign.factory.RedisProvider;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+
 import org.redisson.Redisson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
+import com.spiegel.jobalign.factory.KeyValueProvider;
+import com.spiegel.jobalign.factory.LockProvider;
+import com.spiegel.jobalign.factory.RedisProvider;
 
 /**
  * Created by Eidan on 4/21/2015.
  */
 public abstract class BaseDistributedJob {
 
-    private Logger mLogger = LoggerFactory.getLogger(this.getClass());
+    private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 
     private static final String KEY_JOB_LOCK = "keyJobLock";
     private static final String KEY_JOB_TIMESTAMP = "keyJobTimestamp";
@@ -100,7 +101,7 @@ public abstract class BaseDistributedJob {
                     long lastJobTimeStamp = keyValueProvider.getLong(getJobTimestampName(i));
 
                     if(lastJobTimeStamp < jobFiredTimeStamp) {
-                        mLogger.debug("About to perform job logic for {}, jobTimeStamp = {}, jobFiredTimeStamp = {}, lockAcquisitionTimeStamp = {}",
+                        LOGGER.debug("About to perform job logic for {}, jobTimeStamp = {}, jobFiredTimeStamp = {}, lockAcquisitionTimeStamp = {}",
                             getJobName(i), lastJobTimeStamp, jobFiredTimeStamp, lockAcquisitionTimeStamp);
                         // Perform job logic
                         performJobLogic(i);
@@ -108,12 +109,12 @@ public abstract class BaseDistributedJob {
                         // Write the timestamp
                         keyValueProvider.setLong(getJobTimestampName(i), lockAcquisitionTimeStamp);
                     } else {
-                        mLogger.debug("Job {} already performed, jobTimeStamp = {}, jobFiredTimeStamp = {}, lockAcquisitionTimeStamp = {}",
+                        LOGGER.debug("Job {} already performed, jobTimeStamp = {}, jobFiredTimeStamp = {}, lockAcquisitionTimeStamp = {}",
                             getJobName(i), lastJobTimeStamp, jobFiredTimeStamp, lockAcquisitionTimeStamp);
                     }
                 }
             } catch(Exception e) {
-                mLogger.warn(e.getMessage());
+                LOGGER.warn(e.getMessage());
             } finally {
                 if(lockAcquired) {
                     lock.unlock();

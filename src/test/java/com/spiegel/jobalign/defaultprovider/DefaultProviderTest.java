@@ -1,13 +1,16 @@
 package com.spiegel.jobalign.defaultprovider;
 
+import org.junit.After;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import com.spiegel.jobalign.Scheduler;
 import com.spiegel.jobalign.SchedulerTest;
 import com.spiegel.jobalign.ShardedThreeSchedulerTest;
 import com.spiegel.jobalign.TwoSchedulersTest;
 import com.spiegel.jobalign.factory.DefaultKeyValueProvider;
 import com.spiegel.jobalign.factory.DefaultLockProvider;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 /**
  * Created by eidan on 9/23/15.
@@ -15,6 +18,11 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class DefaultProviderTest {
 
+    @After
+    public void teardown() {
+        Scheduler.getInstance().reset();
+    }
+    
     @Test
     public void testScheduler() {
         SchedulerTest schedulerTest = new SchedulerTest(new DefaultLockProvider(), new DefaultKeyValueProvider());

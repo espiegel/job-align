@@ -1,14 +1,17 @@
 package com.spiegel.jobalign.redis;
 
-import com.spiegel.jobalign.SchedulerTest;
-import com.spiegel.jobalign.ShardedThreeSchedulerTest;
-import com.spiegel.jobalign.TwoSchedulersTest;
-import com.spiegel.jobalign.factory.RedisProvider;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.redisson.Redisson;
+
+import com.spiegel.jobalign.Scheduler;
+import com.spiegel.jobalign.SchedulerTest;
+import com.spiegel.jobalign.ShardedThreeSchedulerTest;
+import com.spiegel.jobalign.TwoSchedulersTest;
+import com.spiegel.jobalign.factory.RedisProvider;
 
 /**
  * Created by Eidan on 4/22/2015.
@@ -18,6 +21,11 @@ public class RedisTest {
 
     private Redisson redisson = Redisson.create();
 
+    @After
+    public void teardown() {
+        Scheduler.getInstance().reset();
+    }
+    
     @Test
     public void testRedissonExists() {
         RedisProvider redisProvider = new RedisProvider(redisson);

@@ -1,10 +1,10 @@
 package com.spiegel.jobalign;
 
-import com.spiegel.jobalign.factory.KeyValueProvider;
-import com.spiegel.jobalign.factory.LockProvider;
-
 import java.util.Calendar;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import com.spiegel.jobalign.factory.KeyValueProvider;
+import com.spiegel.jobalign.factory.LockProvider;
 
 /**
  * Created by eidan on 9/23/15.
